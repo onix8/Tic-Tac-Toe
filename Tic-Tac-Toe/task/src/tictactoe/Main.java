@@ -1,35 +1,73 @@
 package tictactoe;
 
+import java.util.Arrays;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
+
+import static tictactoe.State.*;
+
+enum State {
+    GAME_NOT_FINISHED("Game not finished"),
+    DRAW("Draw"),
+    X_WINS("X wins"),
+    O_WINS("O wins"),
+    IMPOSSIBLE("Impossible");
+
+    private final String stateDescription;
+
+    State(String stateDescription) {
+        this.stateDescription = stateDescription;
+    }
+
+    public String getStateDescription() {
+        return stateDescription;
+    }
+}
 
 public class Main {
 
-    static char[] field;
-    static Scanner scanner = new Scanner(System.in);
+    static char[] field = new char[9];
+    static State state = GAME_NOT_FINISHED;
 
     public static void main(String[] args) {
-        System.out.print("Enter cells: ");
-        String s = scanner.nextLine();
-        field = s.toCharArray();
-        printField(field);
+        int positionOnField;
+        char player = 'X';
 
-//        System.out.println(getTextState());
+        Arrays.fill(field, ' ');
 
-        int positionOnField = enterXY();
-        doMove(positionOnField, 'X');
-        printField(field);
+        while (state == GAME_NOT_FINISHED) {
+            printField(field);
+
+            if (state == GAME_NOT_FINISHED) {
+                positionOnField = enterXY();
+                doMove(positionOnField, player);
+                player = player == 'X' ? 'O' : 'X';
+                updateState();
+            }
+
+            if (state != GAME_NOT_FINISHED) {
+                printField(field);
+                System.out.println(state.getStateDescription());
+            }
+        }
     }
 
-    private static String getTextState() {
-
-        return isNotFinish() ? "Game not finished" :
-                isDraw() ? "Draw" :
-                        isWinsX() ? "X wins" :
-                                isWinsO() ? "O wins" :
-                                        isImpossible() ? "Impossible" : "Impossible";
-
+    /**
+     * Analyzes the state of the field.
+     */
+    private static void updateState() {
+        state = isNotFinish() ? GAME_NOT_FINISHED :
+                isDraw() ? DRAW :
+                        isWinsX() ? X_WINS :
+                                isWinsO() ? O_WINS :
+                                        isImpossible() ? IMPOSSIBLE : IMPOSSIBLE;
     }
 
+    /**
+     * Outputs the formatted content of the field.
+     *
+     * @param field playing field.
+     */
     private static void printField(char[] field) {
         System.out.println("---------");
         System.out.println("| " + field[0] + " " + field[1] + " " + field[2] + " |");
@@ -38,22 +76,44 @@ public class Main {
         System.out.println("---------");
     }
 
+    /**
+     * Records the player's move on the field.
+     *
+     * @param positionOnField address of a field cell.
+     * @param c               player 'X' or 'O'.
+     */
     private static void doMove(int positionOnField, char c) {
         field[positionOnField] = c;
     }
 
+    /**
+     * The user enters two valid coordinates and returns the index of the field cell.
+     *
+     * @return positionOnField.
+     */
     private static int enterXY() {
         int x;
         int y;
         int positionOnField = 0;
         boolean invalidCoordinates = true;
+        String userInput = "";
+        Scanner scannerSystemIn = new Scanner(System.in);
+        Scanner scannerUserInput;
+
         while (invalidCoordinates) {
             System.out.print("Enter the coordinates: ");
 
             try {
-                x = scanner.nextInt();
-                y = scanner.nextInt();
+                userInput = scannerSystemIn.nextLine();
             } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            scannerUserInput = new Scanner(userInput);
+            try {
+                x = scannerUserInput.nextInt();
+                y = scannerUserInput.nextInt();
+            } catch (NoSuchElementException | NumberFormatException e) {
                 System.out.println("You should enter numbers!");
                 invalidCoordinates = true;
                 continue;
@@ -78,6 +138,13 @@ public class Main {
         return positionOnField;
     }
 
+    /**
+     * Converts coordinates to the address of a field cell.
+     *
+     * @param x the column fields from left to right.
+     * @param y field string, from bottom to top.
+     * @return address of a field cell.
+     */
     private static int getPositionOnFieldFromCoordinates(int x, int y) {
         switch (x) {
             case 1:
@@ -122,7 +189,7 @@ public class Main {
      * "Game not finished"
      */
     private static boolean isNotFinish() {
-        return count('_') > 0 &&
+        return count(' ') > 0 &&
                 !isWinsX() &&
                 !isWinsO() &&
                 !isImpossible();
@@ -132,7 +199,7 @@ public class Main {
      * "Draw"
      */
     private static boolean isDraw() {
-        return count('_') == 0 &&
+        return count(' ') == 0 &&
                 !isWinsX() &&
                 !isWinsO() &&
                 !isImpossible();
@@ -168,6 +235,12 @@ public class Main {
         }
     }
 
+    /**
+     * Determines whether the player won or not.
+     *
+     * @param c player 'X' or 'O'.
+     * @return true if there are three in a row.
+     */
     private static boolean isWin(char c) {
         return (field[0] == c && field[1] == c && field[2] == c) ||
                 (field[3] == c && field[4] == c && field[5] == c) ||
@@ -179,6 +252,12 @@ public class Main {
                 (field[2] == c && field[4] == c && field[6] == c);
     }
 
+    /**
+     * Counts the number of specific characters on the field.
+     *
+     * @param c 'X' or 'O' or ' '.
+     * @return number of characters.
+     */
     private static int count(char c) {
         int counter = 0;
         for (char c1 : field) {
@@ -188,5 +267,4 @@ public class Main {
         }
         return counter;
     }
-
 }
